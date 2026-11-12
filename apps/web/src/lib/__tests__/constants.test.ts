@@ -13,7 +13,7 @@ import {
   saveSettings,
 } from '../constants'
 
-const serverDefaults = { provider: 'sub2api', model: 'gpt-image-2.6-sunburst', serverProviderVersion: 1 }
+const serverDefaults = { provider: 'huggingface', model: 'z-image-turbo', serverProviderVersion: 2 }
 
 describe('loadSettings', () => {
   beforeEach(() => {
@@ -40,6 +40,14 @@ describe('loadSettings', () => {
     expect(result).toEqual(serverDefaults)
   })
 
+  it('migrates the version 1 automatic Sub2API default without losing other settings', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      provider: 'sub2api', model: 'gpt-image-2.6-sunburst', serverProviderVersion: 1,
+      prompt: 'keep me', width: 768,
+    }))
+    expect(loadSettings()).toEqual({ ...serverDefaults, prompt: 'keep me', width: 768 })
+  })
+
   it('should handle complex settings object', () => {
     const settings = {
       prompt: 'a beautiful sunset',
@@ -55,7 +63,21 @@ describe('loadSettings', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
 
     const result = loadSettings()
-    expect(result).toEqual({ ...settings, ...serverDefaults })
+    expect(result).toEqual({ ...settings, serverProviderVersion: 2 })
+  })
+
+  it.each([
+    [undefined, 'gitee', 'z-image-turbo'],
+    [1, 'gitee', 'z-image-turbo'],
+    [1, 'sub2api', 'gpt-image-2.5-sunburst'],
+    [2, 'sub2api', 'gpt-image-2.6-sunburst'],
+    [2, 'huggingface', 'z-image-turbo'],
+  ])('preserves explicit selection at version %s: %s/%s', (version, provider, model) => {
+    const settings = { provider, model, prompt: 'keep', serverProviderVersion: version }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    expect(loadSettings()).toEqual({ ...settings, serverProviderVersion: 2 })
+    saveSettings(loadSettings())
+    expect(loadSettings()).toEqual({ ...settings, serverProviderVersion: 2 })
   })
 })
 
@@ -70,7 +92,7 @@ describe('saveSettings', () => {
 
     const stored = localStorage.getItem(STORAGE_KEY)
     expect(stored).not.toBeNull()
-    expect(JSON.parse(stored!)).toEqual({ ...settings, serverProviderVersion: 1 })
+    expect(JSON.parse(stored!)).toEqual({ ...settings, serverProviderVersion: 2 })
   })
 
   it('should overwrite existing settings', () => {
@@ -86,7 +108,7 @@ describe('saveSettings', () => {
     saveSettings({})
 
     const stored = localStorage.getItem(STORAGE_KEY)
-    expect(JSON.parse(stored!)).toEqual({ serverProviderVersion: 1 })
+    expect(JSON.parse(stored!)).toEqual({ serverProviderVersion: 2 })
   })
 })
 

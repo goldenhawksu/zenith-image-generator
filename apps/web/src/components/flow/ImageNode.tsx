@@ -179,11 +179,11 @@ function ImageNodeComponent({ id, data }: ImageNodeProps) {
 
     ;(async () => {
       const settings = loadSettings()
-      const provider = (settings.provider as ProviderType) ?? 'sub2api'
+      const provider = (settings.provider as ProviderType) ?? 'huggingface'
 
       // Validate model
       const validModels = getModelsByProvider(provider)
-      const savedModel = settings.model || 'gpt-image-2.6-sunburst'
+      const savedModel = settings.model || 'z-image-turbo'
       const selectedModel = validModels.some((m) => m.id === savedModel)
         ? savedModel
         : getDefaultModel(provider)

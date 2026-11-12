@@ -124,12 +124,12 @@ function AIResultNode({ id, data, selected }: NodeProps) {
     ;(async () => {
       startTimeRef.current = Date.now()
       const settings = loadSettings()
-      const provider = (settings.provider as ProviderType) ?? 'sub2api'
+      const provider = (settings.provider as ProviderType) ?? 'huggingface'
 
       // Validate model is valid for the provider, otherwise use default
       const { getModelsByProvider, getDefaultModel } = await import('@/lib/constants')
       const validModels = getModelsByProvider(provider)
-      const savedModel = settings.model || 'gpt-image-2.6-sunburst'
+      const savedModel = settings.model || 'z-image-turbo'
       const selectedModel = validModels.some((m) => m.id === savedModel)
         ? savedModel
         : getDefaultModel(provider)

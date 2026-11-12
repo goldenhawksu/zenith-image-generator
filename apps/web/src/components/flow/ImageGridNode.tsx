@@ -17,7 +17,7 @@ type ImageSlot = {
 }
 
 async function generateImage(prompt: string, width: number, height: number): Promise<string> {
-  const result = await openai.generateImage({ model: 'gpt-image-2.6-sunburst', prompt, size: `${width}x${height}`, n: 1, response_format: 'url' })
+  const result = await openai.generateImage({ model: 'z-image-turbo', prompt, size: `${width}x${height}`, n: 1, response_format: 'url' })
   const url = result.data?.[0]?.url
   if (!url) throw new Error('No image returned')
   return url

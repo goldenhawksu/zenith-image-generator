@@ -114,9 +114,9 @@ function FlowCanvas() {
     modelscope: '',
   })
   const [provider, setProvider] = useState<ProviderType>(
-    () => loadSettings().provider ?? 'sub2api'
+    () => loadSettings().provider ?? 'huggingface'
   )
-  const [model, setModel] = useState(() => loadSettings().model ?? 'gpt-image-2.6-sunburst')
+  const [model, setModel] = useState(() => loadSettings().model ?? 'z-image-turbo')
   const [showSettings, setShowSettings] = useState(false)
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [isTranslating, setIsTranslating] = useState(false)

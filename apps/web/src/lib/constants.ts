@@ -58,16 +58,19 @@ export function loadSettings() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     const settings = saved ? JSON.parse(saved) : {}
-    // One-time migration: old Gitee/HF settings must not block the server default.
-    if (settings.serverProviderVersion !== 1) return { ...settings, provider: 'sub2api', model: 'gpt-image-2.6-sunburst', serverProviderVersion: 1 }
-    return settings
+    // Only the old automatic default migrates; version 2 selections are explicit.
+    const migrateDefault = settings.serverProviderVersion === 1 &&
+      settings.provider === 'sub2api' && settings.model === 'gpt-image-2.6-sunburst'
+    const provider = migrateDefault ? 'huggingface' : (settings.provider ?? 'huggingface')
+    const model = migrateDefault ? 'z-image-turbo' : (settings.model ?? getDefaultModel(provider))
+    return { ...settings, provider, model, serverProviderVersion: 2 }
   } catch {
-    return { provider: 'sub2api', model: 'gpt-image-2.6-sunburst', serverProviderVersion: 1 }
+    return { provider: 'huggingface', model: 'z-image-turbo', serverProviderVersion: 2 }
   }
 }
 
 export function saveSettings(settings: Record<string, unknown>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings, serverProviderVersion: 1 }))
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings, serverProviderVersion: 2 }))
 }
 
 // Provider options for UI
