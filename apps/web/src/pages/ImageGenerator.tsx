@@ -1,31 +1,38 @@
-import { useImageGenerator } from "@/hooks/useImageGenerator";
-import { Header } from "@/components/feature/Header";
-import { ApiConfigAccordion } from "@/components/feature/ApiConfigAccordion";
-import { PromptCard } from "@/components/feature/PromptCard";
-import { ImageResultCard } from "@/components/feature/ImageResultCard";
-import { StatusCard } from "@/components/feature/StatusCard";
+import { useState } from 'react'
+import { Header } from '@/components/feature/Header'
+import { ImageHistory } from '@/components/feature/ImageHistory'
+import { ImageResultCard } from '@/components/feature/ImageResultCard'
+import { PromptCard } from '@/components/feature/PromptCard'
+import { SettingsModal } from '@/components/feature/SettingsModal'
+import { StatusCard } from '@/components/feature/StatusCard'
+import { useImageGenerator } from '@/hooks/useImageGenerator'
 
 export default function ImageGenerator() {
+  const [showSettings, setShowSettings] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const {
-    hfToken,
-    apiProvider,
+    currentToken,
+    provider,
+    model,
+    availableModels,
     prompt,
     negativePrompt,
     width,
     height,
     steps,
     loading,
-    imageUrl,
+    imageDetails,
     status,
     elapsed,
     selectedRatio,
     uhd,
     showInfo,
     isBlurred,
-    isUpscaled,
-    isUpscaling,
-    setHfToken,
-    setApiProvider,
+    isOptimizing,
+    isTranslating,
+    llmSettings,
+    setProvider,
+    setModel,
     setPrompt,
     setNegativePrompt,
     setWidth,
@@ -33,32 +40,40 @@ export default function ImageGenerator() {
     setSteps,
     setShowInfo,
     setIsBlurred,
-    saveHfToken,
+    setLLMProvider,
+    setLLMModel,
+    setTranslateProvider,
+    setTranslateModel,
+    setAutoTranslate,
+    setCustomSystemPrompt,
+    setCustomOptimizeConfig,
+    setCustomTranslateConfig,
+    saveToken,
     handleRatioSelect,
     handleUhdToggle,
     handleDownload,
-    handleUpscale,
     handleDelete,
     handleGenerate,
-  } = useImageGenerator();
+    handleLoadFromHistory,
+    handleOptimize,
+    handleTranslate,
+    historyId,
+    generatedAt,
+  } = useImageGenerator()
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
-          <Header />
+          <Header
+            onSettingsClick={() => setShowSettings(true)}
+            onHistoryClick={() => setShowHistory(true)}
+            hasToken={!!currentToken}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Left Panel - Controls */}
             <div className="lg:col-span-3 space-y-4">
-              <ApiConfigAccordion
-                hfToken={hfToken}
-                apiProvider={apiProvider}
-                setHfToken={setHfToken}
-                setApiProvider={setApiProvider}
-                saveHfToken={saveHfToken}
-              />
-
               <PromptCard
                 prompt={prompt}
                 negativePrompt={negativePrompt}
@@ -76,27 +91,28 @@ export default function ImageGenerator() {
                 handleRatioSelect={handleRatioSelect}
                 handleUhdToggle={handleUhdToggle}
                 handleGenerate={handleGenerate}
+                onOptimize={handleOptimize}
+                onTranslate={handleTranslate}
+                isOptimizing={isOptimizing}
+                isTranslating={isTranslating}
               />
             </div>
 
             {/* Right Panel - Output */}
             <div className="lg:col-span-2 space-y-4">
               <ImageResultCard
-                imageUrl={imageUrl}
+                imageDetails={imageDetails}
                 loading={loading}
                 elapsed={elapsed}
-                width={width}
-                height={height}
-                apiProvider={apiProvider}
                 showInfo={showInfo}
                 isBlurred={isBlurred}
-                isUpscaled={isUpscaled}
-                isUpscaling={isUpscaling}
                 setShowInfo={setShowInfo}
                 setIsBlurred={setIsBlurred}
-                handleUpscale={handleUpscale}
                 handleDownload={handleDownload}
                 handleDelete={handleDelete}
+                onRegenerate={handleGenerate}
+                historyId={historyId}
+                generatedAt={generatedAt}
               />
 
               <StatusCard status={status} />
@@ -104,6 +120,33 @@ export default function ImageGenerator() {
           </div>
         </div>
       </div>
+
+      <ImageHistory
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        onSelect={handleLoadFromHistory}
+      />
+
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        provider={provider}
+        model={model}
+        currentToken={currentToken}
+        availableModels={availableModels}
+        setProvider={setProvider}
+        setModel={setModel}
+        saveToken={saveToken}
+        llmSettings={llmSettings}
+        setLLMProvider={setLLMProvider}
+        setLLMModel={setLLMModel}
+        setTranslateProvider={setTranslateProvider}
+        setTranslateModel={setTranslateModel}
+        setAutoTranslate={setAutoTranslate}
+        setCustomSystemPrompt={setCustomSystemPrompt}
+        setCustomOptimizeConfig={setCustomOptimizeConfig}
+        setCustomTranslateConfig={setCustomTranslateConfig}
+      />
     </div>
-  );
+  )
 }

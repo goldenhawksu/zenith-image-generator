@@ -1,53 +1,59 @@
-import { memo, useEffect, useState, useRef } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { generateImage } from "@/lib/generate-image";
+import { Handle, type NodeProps, Position } from '@xyflow/react'
+import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
+import { memo, useEffect, useRef, useState } from 'react'
+import { openai } from '@/lib/api'
 
 export type ImageGridNodeData = {
-  prompt: string;
-  width?: number;
-  height?: number;
-};
+  prompt: string
+  width?: number
+  height?: number
+}
 
 type ImageSlot = {
-  url: string | null;
-  loading: boolean;
-  error: string | null;
-};
+  url: string | null
+  loading: boolean
+  error: string | null
+}
 
+async function generateImage(prompt: string, width: number, height: number): Promise<string> {
+  const result = await openai.generateImage({ model: 'gpt-image-2.6-sunburst', prompt, size: `${width}x${height}`, n: 1, response_format: 'url' })
+  const url = result.data?.[0]?.url
+  if (!url) throw new Error('No image returned')
+  return url
+}
 
 function ImageGridNode({ data }: NodeProps) {
-  const { prompt, width = 512, height = 512 } = data as ImageGridNodeData;
+  const { prompt, width = 512, height = 512 } = data as ImageGridNodeData
   const [slots, setSlots] = useState<ImageSlot[]>(
     Array(4).fill({ url: null, loading: true, error: null })
-  );
-  const generatingRef = useRef(false);
+  )
+  const generatingRef = useRef(false)
 
   useEffect(() => {
     // Prevent double execution from React StrictMode
-    if (generatingRef.current) return;
-    generatingRef.current = true;
+    if (generatingRef.current) return
+    generatingRef.current = true
 
     // Launch 4 concurrent requests
     for (let i = 0; i < 4; i++) {
       generateImage(prompt, width, height)
         .then((url) => {
           setSlots((prev) => {
-            const next = [...prev];
-            next[i] = { url, loading: false, error: null };
-            return next;
-          });
+            const next = [...prev]
+            next[i] = { url, loading: false, error: null }
+            return next
+          })
         })
         .catch((err) => {
           setSlots((prev) => {
-            const next = [...prev];
-            next[i] = { url: null, loading: false, error: err.message };
-            return next;
-          });
-        });
+            const next = [...prev]
+            next[i] = { url: null, loading: false, error: err.message }
+            return next
+          })
+        })
     }
-  }, [prompt, width, height]);
+  }, [prompt, width, height])
 
   return (
     <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-xl p-4 min-w-[320px] shadow-2xl">
@@ -69,9 +75,7 @@ function ImageGridNode({ data }: NodeProps) {
               </div>
             ) : slot.error ? (
               <div className="w-full h-full flex items-center justify-center p-2">
-                <span className="text-red-400 text-xs text-center">
-                  {slot.error}
-                </span>
+                <span className="text-red-400 text-xs text-center">{slot.error}</span>
               </div>
             ) : (
               <img
@@ -84,13 +88,9 @@ function ImageGridNode({ data }: NodeProps) {
         ))}
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!bg-zinc-600"
-      />
+      <Handle type="source" position={Position.Bottom} className="!bg-zinc-600" />
     </div>
-  );
+  )
 }
 
-export default memo(ImageGridNode);
+export default memo(ImageGridNode)

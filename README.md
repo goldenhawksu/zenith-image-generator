@@ -1,335 +1,190 @@
-# Z-Image
+<div align="center">
 
-[中文文档](./README.zh.md) | [Changelog](./CHANGELOG.md)
+# Zenith Image Generator
 
-A modern Text-to-Image generation web application with multiple AI providers (Gitee AI, HuggingFace Spaces).
+**Modern Text-to-Image Generation Web App**
+
+A sleek, dark-mode AI image generator with multiple providers, <br/>
+batch generation, and one-click deployment to Cloudflare Pages.
+
+[中文](./README.zh.md) · [Changelog](./docs/CHANGELOG.md) · [Live Demo](https://zenith-image-generator.pages.dev)
 
 ![Dark Mode UI](https://img.shields.io/badge/UI-Dark%20Mode-1a1a1a)
 ![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![Hono](https://img.shields.io/badge/Hono-4-E36002)
 
+</div>
+
+---
+
 ## Features
 
-- Dark mode Gradio-style UI with frosted glass effects
-- Multiple API providers: Gitee AI, HF Z-Image Turbo, HF Qwen Image
-- Multiple aspect ratio presets (1:1, 16:9, 9:16, 4:3, 3:4, etc.)
-- Adjustable inference steps and dimensions
-- 4x image upscaling via RealESRGAN
-- Real-time generation progress with timer
-- Floating toolbar with blur, info, download, delete actions
-- One-click image download (JPG)
-- API key persistence in browser (AES-256-GCM encrypted)
-- Settings persistence in localStorage (including blur state)
-- Responsive design (mobile & desktop)
-- Modular component architecture for maintainability
-- **[Experimental] Flow Mode**: Visual canvas for batch image generation with React Flow
+- **Multiple AI Providers** - A4F, Gitee AI, HuggingFace Spaces, ModelScope
+- **Dark Mode UI** - Gradio-style with frosted glass effects
+- **Flexible Sizing** - Multiple aspect ratios (1:1, 16:9, 9:16, 4:3, etc.)
+- **Secure Storage** - API keys encrypted with AES-256-GCM
+- **Token Rotation** - Multiple API keys with automatic failover on rate limits
+- **History (Lightweight)** - Stores metadata (URL + params) in localStorage with 24h TTL
+- **Flow Mode** - Visual canvas for batch generation (experimental)
+  - Images are referenced by remote URLs (no blob caching)
+  - Flow state is persisted locally
 
-## Tech Stack
+## Token Rotation
 
-- **Frontend**: React 19, Vite, Tailwind CSS, shadcn/ui, React Flow
-- **Backend**: Hono (TypeScript)
-- **Deployment**: Cloudflare Pages + Functions
-- **API**: Gitee AI (z-image-turbo)
-- **Architecture**: Custom hooks, modular feature components
+Support multiple API tokens per provider for automatic rotation when hitting rate limits (429 errors).
 
-## Flow Mode (Experimental)
+### How to Use
 
-Flow Mode provides a visual canvas for batch image generation using React Flow.
-
-**Access**: Click "Flow Mode" in the header or navigate to `/flow`
-
-**Features**:
-- Visual node-based canvas with drag-and-drop
-- Batch generation (1-4 images per prompt)
-- Floating input bar for quick prompts
-- Session sidebar with history
-- Per-image download and blur controls
-- Auto-layout using dagre algorithm
-
-**Limitations**:
-- ⚠️ **Session data is stored in memory only** - refreshing the browser will lose all generated images
-- Settings (aspect ratio, resolution) persist in localStorage, but images do not
-
-## Project Structure
+Enter multiple tokens in the API settings, separated by **English commas** (`,`):
 
 ```
-z-image/
-├── apps/
-│   ├── web/                    # Frontend application
-│   │   ├── src/
-│   │   │   ├── pages/          # Page components (ImageGenerator, FlowPage)
-│   │   │   ├── components/
-│   │   │   │   ├── ui/         # shadcn/ui components
-│   │   │   │   ├── feature/    # Feature components (Header, PromptCard, etc.)
-│   │   │   │   └── flow/       # Flow Mode components (AIResultNode, etc.)
-│   │   │   ├── hooks/          # Custom React hooks (useImageGenerator)
-│   │   │   └── lib/            # Utilities (crypto, constants, flow-storage)
-│   │   ├── functions/api/      # Cloudflare Pages Functions
-│   │   └── dist/               # Build output
-│   └── api/                    # Hono API (shared with functions)
-│       └── src/index.ts
-├── CLAUDE.md                   # Project guidance for Claude Code
-├── package.json
-├── pnpm-workspace.yaml
-└── turbo.json
+token_1, token_2, token_3
 ```
 
-## Prerequisites
+> **Note**: You must use English comma (`,`), Chinese comma (`，`) will not work.
 
-- Node.js 18+
-- pnpm 9+
-- Gitee AI API Key ([Get one here](https://ai.gitee.com))
+### How It Works
 
-## Local Development
+1. Uses the first available token to make API requests
+2. When a 429 (rate limit) error occurs, automatically switches to the next token
+3. Exhausted tokens are tracked and skipped for the rest of the day
+4. Token status resets daily at UTC 00:00
+5. UI shows real-time token statistics (total/active/exhausted)
 
-### 1. Fork and clone the repository
+## Quick Start
 
-1. Go to [https://github.com/WuMingDao/zenith-image-generator](https://github.com/WuMingDao/zenith-image-generator)
-2. Click **Fork** button in the top right corner
-3. Clone your forked repository:
+### Prerequisites
+
+- Node.js 18+ / pnpm 9+
+- [Gitee AI API Key](https://ai.gitee.com)
+- [A4F API Key](https://www.a4f.co) (optional)
+
+### A4F (api.a4f.co) API Key
+
+1. Register / login at https://www.a4f.co/
+2. Create an API key in the A4F dashboard (see docs): https://www.a4f.co/docs
+3. In Zenith Settings, select provider `A4F` and paste the key into the Token field
+
+Notes:
+
+- A4F requires a provider-prefixed model id (e.g. `provider-4/imagen-3.5`). Zenith exposes these in the model dropdown.
+- If you call the OpenAI-compatible endpoint directly, use `model: "a4f/provider-4/imagen-3.5"` and `Authorization: Bearer a4f:<token>`.
+
+### One-Click Deploy
+
+[![Deploy to Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://dash.cloudflare.com)
+[![Deploy to Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/new)
+[![Deploy to Netlify](https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://app.netlify.com/start)
+
+> See [Deployment Guide](./docs/en/DEPLOYMENT.md) for detailed instructions.
+
+### Local Development
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/zenith-image-generator.git
+git clone https://github.com/WuMingDao/zenith-image-generator.git
 cd zenith-image-generator
-```
-
-### 2. Install dependencies
-
-```bash
 pnpm install
-```
 
-### 3. Start development server
+# Configure environment
+cp apps/web/.env.example apps/web/.env
 
-**Option A: Full stack with Cloudflare Pages (Recommended)**
-
-```bash
-cd apps/web
-pnpm add wrangler -D
-npx wrangler pages dev --port 5173 -- pnpm dev
-```
-
-**Option B: Frontend only (requires separate API)**
-
-```bash
-# Terminal 1: Start API
+# Terminal 1
 pnpm dev:api
 
-# Terminal 2: Start Web (update .env first)
-# Set VITE_API_URL=http://localhost:8787 in apps/web/.env
+# Terminal 2
 pnpm dev:web
 ```
 
-### 4. Open browser
+Open `http://localhost:5173`
 
-Navigate to `http://localhost:5173`
+📖 **[Full Development Guide](./docs/en/CONTRIBUTING.md)**
 
-## Self-Hosting Deployment
+## API Usage
 
-### Option 1: Cloudflare Pages (Recommended)
-
-Deploy both frontend and API together with zero configuration.
-
-#### Using Cloudflare Dashboard
-
-1. Push your code to GitHub/GitLab
-
-2. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) → **Pages** → **Create a project**
-
-3. Connect your Git repository
-
-4. Configure build settings:
-   | Setting | Value |
-   |---------|-------|
-   | Root directory | `apps/web` |
-   | Build command | `pnpm build` |
-   | Output directory | `dist` |
-
-5. Click **Save and Deploy**
-
-6. Your app will be available at `https://your-project.pages.dev`
-
-#### Using Wrangler CLI
+After deployment, you can call the OpenAI-format API directly:
 
 ```bash
-# Install Wrangler globally
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Deploy from apps/web directory
-cd apps/web
-pnpm build
-wrangler pages deploy dist --project-name z-image
+curl -X POST https://your-project.pages.dev/v1/images/generations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer gitee:your-gitee-api-key" \
+  -d '{
+    "model": "gitee/z-image-turbo",
+    "prompt": "a cute cat",
+    "size": "1024x1024",
+    "steps": 9,
+    "n": 1,
+    "response_format": "url"
+  }'
 ```
 
-### Option 2: Vercel (Frontend) + Cloudflare Workers (API)
+Notes:
 
-#### Deploy API to Cloudflare Workers
+- The API returns the **raw provider image URL** (e.g. HuggingFace Space `gradio_api/file=...`).
+- Some provider URLs are **temporary** (HF Space files often expire around 24 hours).
+- Provider routing is via the `model` prefix:
+  - `a4f/...` -> A4F (`Authorization: Bearer a4f:...`)
+  - `gitee/...` -> Gitee AI (`Authorization: Bearer gitee:...`)
+  - `ms/...` -> ModelScope (`Authorization: Bearer ms:...`)
+  - no prefix -> HuggingFace (token optional; `Authorization: Bearer <token>` or `Authorization: Bearer hf:<token>`)
 
-```bash
-cd apps/api
+📖 **[Full API Reference](./docs/en/API.md)** - Providers, parameters, code examples
 
-# Update wrangler.toml with your CORS origins
-# CORS_ORIGINS = "https://your-app.vercel.app"
+## Documentation
 
-wrangler deploy
-```
-
-Note your Workers URL: `https://z-image-api.your-account.workers.dev`
-
-#### Deploy Frontend to Vercel
-
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard) → **New Project**
-
-2. Import your Git repository
-
-3. Configure:
-   | Setting | Value |
-   |---------|-------|
-   | Root Directory | `apps/web` |
-   | Build Command | `pnpm build` |
-   | Output Directory | `dist` |
-
-4. Add Environment Variable:
-   | Name | Value |
-   |------|-------|
-   | `VITE_API_URL` | `https://z-image-api.your-account.workers.dev` |
-
-5. Deploy
-
-### Option 3: Netlify (Frontend) + Cloudflare Workers (API)
-
-#### Deploy API to Cloudflare Workers
-
-Same as Option 2 above.
-
-#### Deploy Frontend to Netlify
-
-1. Go to [Netlify Dashboard](https://app.netlify.com) → **Add new site**
-
-2. Import your Git repository
-
-3. Configure:
-   | Setting | Value |
-   |---------|-------|
-   | Base directory | `apps/web` |
-   | Build command | `pnpm build` |
-   | Publish directory | `apps/web/dist` |
-
-4. Add Environment Variable in **Site settings** → **Environment variables**:
-   | Name | Value |
-   |------|-------|
-   | `VITE_API_URL` | `https://z-image-api.your-account.workers.dev` |
-
-5. Trigger redeploy
+| Doc                                       | Description                          |
+| ----------------------------------------- | ------------------------------------ |
+| [Contributing](./docs/en/CONTRIBUTING.md) | Local setup, LAN access, development |
+| [Deployment](./docs/en/DEPLOYMENT.md)     | Cloudflare, Vercel, Netlify guides   |
+| [API Reference](./docs/en/API.md)         | Endpoints, parameters, code examples |
+| [Providers & Models](./docs/en/PROVIDERS.md) | All providers and model details   |
 
 ## Security
 
-### API Key Storage
+### How Your API Keys Are Protected
 
-Your Gitee AI API key is stored securely in the browser using **AES-256-GCM encryption**:
-
-- The key is encrypted before being saved to localStorage
-- Encryption key is derived using PBKDF2 (100,000 iterations) from browser fingerprint
-- Even if localStorage is accessed, the API key cannot be read without the same browser environment
-- Changing browsers or clearing browser data will require re-entering the API key
-
-**Implementation details** (`src/lib/crypto.ts`):
-- Uses Web Crypto API (native browser cryptography)
-- AES-256-GCM for authenticated encryption
-- Random IV for each encryption operation
-- Browser fingerprint includes: User-Agent, language, screen dimensions
-
-**Note**: While this provides protection against casual access and XSS attacks reading raw values, for maximum security in shared environments, consider:
-- Using a private/incognito window
-- Clearing browser data after use
-- Self-hosting with server-side API key storage
-
-## Environment Variables
-
-### Frontend (`apps/web/.env`)
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_URL` | API base URL. Leave empty for Cloudflare Pages deployment | `` |
-
-### API (`apps/api/wrangler.toml`)
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:5173,http://localhost:3000` |
-
-## API Reference
-
-### `POST /api/generate`
-
-Generate an image from text prompt.
-
-**Headers:**
 ```
-Content-Type: application/json
-X-API-Key: your-gitee-ai-api-key
+Browser ──HTTPS──→ Cloudflare Workers ──HTTPS──→ AI Provider (Gitee/HuggingFace)
+   ↑                      ↑
+AES-256-GCM          Proxy Layer
+encrypted            (your deployment)
 ```
 
-**Request Body:**
-```json
-{
-  "prompt": "A beautiful sunset over mountains",
-  "negative_prompt": "low quality, blurry",
-  "model": "z-image-turbo",
-  "width": 1024,
-  "height": 1024,
-  "num_inference_steps": 9
-}
-```
+- **Local Encryption**: API keys are encrypted with AES-256-GCM before storing in localStorage
+- **Transport Security**: All communications use HTTPS encryption
+- **Proxy Architecture**: Your keys are sent to your own Workers, not directly to AI providers
 
-**Response:**
-```json
-{
-  "url": "https://...",
-  "b64_json": "base64-encoded-image-data"
-}
-```
+### ⚠️ Third-Party Deployment Warning
 
-**Parameters:**
+> **Important**: If you use someone else's deployed instance, the operator can potentially access your API keys.
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `prompt` | string | Yes | - | Image description (max 10000 chars) |
-| `negative_prompt` | string | No | `""` | What to avoid in the image |
-| `model` | string | No | `z-image-turbo` | Model name |
-| `width` | number | No | `1024` | Image width (256-2048) |
-| `height` | number | No | `1024` | Image height (256-2048) |
-| `num_inference_steps` | number | No | `9` | Generation steps (1-50) |
+This is because:
 
-## Supported Aspect Ratios
+1. The deployment owner can add logging code to capture request headers
+2. You cannot verify what code is actually deployed (even if the repo is open source)
+3. Cloudflare provides tools like `wrangler tail` that can inspect live requests
 
-| Ratio | Dimensions |
-|-------|------------|
-| 1:1 | 256×256, 512×512, 1024×1024, 2048×2048 |
-| 4:3 | 1152×896, 2048×1536 |
-| 3:4 | 768×1024, 1536×2048 |
-| 3:2 | 2048×1360 |
-| 2:3 | 1360×2048 |
-| 16:9 | 1024×576, 2048×1152 |
-| 9:16 | 576×1024, 1152×2048 |
+**Recommendations**:
 
-## Troubleshooting
+| Scenario | Risk Level | Recommendation |
+|----------|------------|----------------|
+| Self-hosted deployment | ✅ Safe | Full control over your keys |
+| Third-party instance | ⚠️ Risky | Use disposable/low-balance keys only |
+| Unknown source | ❌ Unsafe | Do not enter valuable API keys |
 
-### API Key not saving
-- Make sure your browser allows localStorage
-- Check if you're in private/incognito mode
+**For maximum security, always deploy your own instance.**
 
-### CORS errors
-- For Cloudflare Pages: Should work automatically
-- For separate deployments: Update `CORS_ORIGINS` in `apps/api/wrangler.toml`
+## Tech Stack
 
-### Build failures
-- Ensure Node.js 18+ and pnpm 9+ are installed
-- Run `pnpm install` to update dependencies
+| Layer    | Tech                                    |
+| -------- | --------------------------------------- |
+| Frontend | React 19, Vite, Tailwind CSS, shadcn/ui |
+| Backend  | Hono (TypeScript)                       |
+| Deploy   | Cloudflare Pages, Vercel, Netlify       |
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=WuMingDao/zenith-image-generator&type=date&legend=top-left)](https://www.star-history.com/#WuMingDao/zenith-image-generator&type=date&legend=top-left)
 
 ## License
 
@@ -337,6 +192,6 @@ MIT
 
 ## Acknowledgments
 
-- [Gitee AI](https://ai.gitee.com) for the z-image-turbo model
-- [shadcn/ui](https://ui.shadcn.com) for UI components
-- [Hono](https://hono.dev) for the lightweight web framework
+- [Gitee AI](https://ai.gitee.com) - z-image-turbo model
+- [shadcn/ui](https://ui.shadcn.com) - UI components
+- [Hono](https://hono.dev) - Web framework

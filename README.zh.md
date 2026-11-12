@@ -1,339 +1,186 @@
-# Z-Image
+<div align="center">
 
-[English](./README.md) | [更新日志](./CHANGELOG.md)
+# Zenith Image Generator
 
-支持多 AI 提供商（Gitee AI、HuggingFace Spaces）的现代文生图 Web 应用。
+**现代化 AI 文生图 Web 应用**
+
+支持多 AI 提供商的深色模式图片生成器，<br/>
+批量生成，一键部署到 Cloudflare Pages。
+
+[English](./README.md) · [更新日志](./docs/CHANGELOG.md) · [在线演示](https://zenith-image-generator.pages.dev)
 
 ![Dark Mode UI](https://img.shields.io/badge/UI-Dark%20Mode-1a1a1a)
 ![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![Hono](https://img.shields.io/badge/Hono-4-E36002)
 
+</div>
+
+---
+
 ## 功能特性
 
-- 深色模式 Gradio 风格 UI，毛玻璃效果
-- 多 API 提供商：Gitee AI、HF Z-Image Turbo、HF Qwen Image
-- 多种宽高比预设 (1:1, 16:9, 9:16, 4:3, 3:4 等)
-- 可调节推理步数和尺寸
-- 4x 图片放大 (RealESRGAN)
-- 实时生成进度与计时器
-- 悬浮工具栏：模糊、信息、下载、删除
-- 一键下载图片 (JPG)
-- API Key 浏览器加密存储 (AES-256-GCM)
-- 设置持久化到 localStorage (包括模糊状态)
-- 响应式设计 (移动端 & 桌面端)
-- 模块化组件架构，易于维护
-- **[实验性] Flow 模式**: 基于 React Flow 的可视化批量生图画布
+- **多 AI 提供商** - A4F、Gitee AI、HuggingFace Spaces、ModelScope
+- **深色模式 UI** - Gradio 风格毛玻璃效果
+- **灵活尺寸** - 多种宽高比 (1:1, 16:9, 9:16, 4:3 等)
+- **安全存储** - API Key 使用 AES-256-GCM 加密
+- **Token 轮询** - 多 API Key 自动切换，遇到限流自动换用下一个
+- **历史记录（轻量）** - 仅存元数据（URL + 参数）到 localStorage，24 小时自动过期清理
+- **Flow 模式** - 可视化批量生成画布 (实验性)
 
-## 技术栈
+## Token 轮询
 
-- **前端**: React 19, Vite, Tailwind CSS, shadcn/ui, React Flow
-- **后端**: Hono (TypeScript)
-- **部署**: Cloudflare Pages + Functions
-- **API**: Gitee AI (z-image-turbo)
-- **架构**: 自定义 Hooks、模块化功能组件
+支持为每个服务商配置多个 API Token，遇到限流错误 (429) 时自动切换。
 
-## Flow 模式 (实验性)
+### 使用方法
 
-Flow 模式提供了一个基于 React Flow 的可视化批量生图画布。
-
-**访问方式**: 点击顶部导航栏的 "Flow Mode" 或访问 `/flow`
-
-**功能特性**:
-- 可视化节点画布，支持拖拽
-- 批量生成 (每个提示词 1-4 张图)
-- 悬浮输入栏，快速输入提示词
-- 会话侧边栏，查看历史记录
-- 单张图片下载和模糊控制
-- 使用 dagre 算法自动布局
-
-**限制**:
-- ⚠️ **会话数据仅存储在内存中** - 刷新浏览器将丢失所有生成的图片
-- 设置 (宽高比、分辨率) 会持久化到 localStorage，但图片不会
-
-## 项目结构
+在 API 设置中输入多个 Token，用**英文逗号** (`,`) 分隔：
 
 ```
-z-image/
-├── apps/
-│   ├── web/                    # 前端应用
-│   │   ├── src/
-│   │   │   ├── pages/          # 页面组件 (ImageGenerator, FlowPage)
-│   │   │   ├── components/
-│   │   │   │   ├── ui/         # shadcn/ui 组件
-│   │   │   │   ├── feature/    # 功能组件 (Header, PromptCard 等)
-│   │   │   │   └── flow/       # Flow 模式组件 (AIResultNode 等)
-│   │   │   ├── hooks/          # 自定义 React Hooks (useImageGenerator)
-│   │   │   └── lib/            # 工具函数 (crypto, constants, flow-storage)
-│   │   ├── functions/api/      # Cloudflare Pages Functions
-│   │   └── dist/               # 构建输出
-│   └── api/                    # Hono API (与 functions 共享)
-│       └── src/index.ts
-├── CLAUDE.md                   # Claude Code 项目指南
-├── package.json
-├── pnpm-workspace.yaml
-└── turbo.json
+token_1, token_2, token_3
 ```
 
-## 前置要求
+> **注意**：必须使用英文逗号 (`,`)，中文逗号 (`，`) 无效。
 
-- Node.js 18+
-- pnpm 9+
-- Gitee AI API Key ([点此获取](https://ai.gitee.com))
+### 工作原理
 
-## 本地开发
+1. 优先使用第一个可用的 Token 发起请求
+2. 遇到 429 (限流) 错误时，自动切换到下一个 Token
+3. 已耗尽的 Token 会被记录，当天不再使用
+4. Token 状态每天 UTC 00:00 自动重置
+5. 界面实时显示 Token 统计 (总数/可用/已耗尽)
 
-### 1. 克隆仓库
+## 快速开始
+
+### 前置要求
+
+- Node.js 18+ / pnpm 9+
+- [Gitee AI API Key](https://ai.gitee.com)
+- [A4F API Key](https://www.a4f.co)（可选）
+
+### A4F（api.a4f.co）渠道：注册获取 API Key
+
+1. 打开 https://www.a4f.co/ 注册/登录
+2. 在 A4F 控制台创建 API Key（参考官方文档）：https://www.a4f.co/docs
+3. 在 Zenith 设置中选择服务商 `A4F`，把 API Key 粘贴到 Token 输入框
+
+说明：
+
+- A4F 的模型必须带 provider 前缀（例如 `provider-4/imagen-3.5`），Zenith 已在模型下拉框内提供可用项。
+- 如直接调用 OpenAI 兼容接口，请使用 `model: "a4f/provider-4/imagen-3.5"`，并在请求头中使用 `Authorization: Bearer a4f:<token>`。
+
+### 一键部署
+
+[![部署到 Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare)](https://dash.cloudflare.com)
+
+> 连接 GitHub 仓库 → 设置 root 为 `apps/web` → 部署！
+
+### 本地开发
 
 ```bash
-git clone https://github.com/your-username/z-image.git
-cd z-image
-```
-
-### 2. 安装依赖
-
-```bash
+git clone https://github.com/WuMingDao/zenith-image-generator.git
+cd zenith-image-generator
 pnpm install
-```
 
-### 3. 启动开发服务器
+# 配置环境变量
+cp apps/web/.env.example apps/web/.env
 
-**方式 A: 使用 Cloudflare Pages 全栈开发 (推荐)**
-
-```bash
-cd apps/web
-pnpm add wrangler -D
-npx wrangler pages dev --port 5173 -- pnpm dev
-```
-
-**方式 B: 仅前端 (需要单独启动 API)**
-
-```bash
-# 终端 1: 启动 API
+# 终端 1
 pnpm dev:api
 
-# 终端 2: 启动 Web (先更新 .env)
-# 在 apps/web/.env 中设置 VITE_API_URL=http://localhost:8787
+# 终端 2
 pnpm dev:web
 ```
 
-### 4. 打开浏览器
+打开 `http://localhost:5173`
 
-访问 `http://localhost:5173`
+📖 **[完整开发指南](./docs/zh/CONTRIBUTING.md)**
 
-## 自托管部署
+## 文档
 
-### 方式 1: Cloudflare Pages (推荐)
+| 文档                                  | 描述                             |
+| ------------------------------------- | -------------------------------- |
+| [贡献指南](./docs/zh/CONTRIBUTING.md) | 本地配置、局域网访问、开发       |
+| [部署指南](./docs/zh/DEPLOYMENT.md)   | Cloudflare、Vercel、Netlify 教程 |
+| [API 参考](./docs/zh/API.md)          | 接口、参数、代码示例             |
 
-前端和 API 一起部署，零配置。
+补充说明：
 
-#### 使用 Cloudflare Dashboard
+- 接口返回的是**原始图片 URL**（例如 HuggingFace Space 的 `gradio_api/file=...`）。
+- 部分 URL 是**临时文件**（HF Space 通常 24 小时左右会失效）。
 
-1. 将代码推送到 GitHub/GitLab
+## API 使用
 
-2. 前往 [Cloudflare Dashboard](https://dash.cloudflare.com) → **Pages** → **Create a project**
-
-3. 连接你的 Git 仓库
-
-4. 配置构建设置:
-   | 设置 | 值 |
-   |---------|-------|
-   | Root directory | `apps/web` |
-   | Build command | `pnpm build` |
-   | Output directory | `dist` |
-
-5. 点击 **Save and Deploy**
-
-6. 应用将部署到 `https://your-project.pages.dev`
-
-#### 使用 Wrangler CLI
+部署后可直接调用 OpenAI 格式 API：
 
 ```bash
-# 全局安装 Wrangler
-npm install -g wrangler
-
-# 登录 Cloudflare
-wrangler login
-
-# 从 apps/web 目录部署
-cd apps/web
-pnpm build
-wrangler pages deploy dist --project-name z-image
+curl -X POST https://your-project.pages.dev/v1/images/generations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer gitee:your-gitee-api-key" \
+  -d '{
+    "model": "gitee/z-image-turbo",
+    "prompt": "a cute cat",
+    "size": "1024x1024",
+    "steps": 9,
+    "n": 1,
+    "response_format": "url"
+  }'
 ```
 
-### 方式 2: Vercel (前端) + Cloudflare Workers (API)
+说明：
 
-#### 部署 API 到 Cloudflare Workers
-
-```bash
-cd apps/api
-
-# 更新 wrangler.toml 中的 CORS 源
-# CORS_ORIGINS = "https://your-app.vercel.app"
-
-wrangler deploy
-```
-
-记下 Workers URL: `https://z-image-api.your-account.workers.dev`
-
-#### 部署前端到 Vercel
-
-1. 前往 [Vercel Dashboard](https://vercel.com/dashboard) → **New Project**
-
-2. 导入你的 Git 仓库
-
-3. 配置:
-   | 设置 | 值 |
-   |---------|-------|
-   | Root Directory | `apps/web` |
-   | Build Command | `pnpm build` |
-   | Output Directory | `dist` |
-
-4. 添加环境变量:
-   | 名称 | 值 |
-   |------|-------|
-   | `VITE_API_URL` | `https://z-image-api.your-account.workers.dev` |
-
-5. 部署
-
-### 方式 3: Netlify (前端) + Cloudflare Workers (API)
-
-#### 部署 API 到 Cloudflare Workers
-
-同方式 2。
-
-#### 部署前端到 Netlify
-
-1. 前往 [Netlify Dashboard](https://app.netlify.com) → **Add new site**
-
-2. 导入你的 Git 仓库
-
-3. 配置:
-   | 设置 | 值 |
-   |---------|-------|
-   | Base directory | `apps/web` |
-   | Build command | `pnpm build` |
-   | Publish directory | `apps/web/dist` |
-
-4. 在 **Site settings** → **Environment variables** 添加环境变量:
-   | 名称 | 值 |
-   |------|-------|
-   | `VITE_API_URL` | `https://z-image-api.your-account.workers.dev` |
-
-5. 触发重新部署
+- Provider 路由通过 `model` 前缀区分：
+  - `a4f/...` -> A4F（`Authorization: Bearer a4f:...`）
+  - `gitee/...` -> Gitee AI（`Authorization: Bearer gitee:...`）
+  - `ms/...` -> ModelScope（`Authorization: Bearer ms:...`）
+  - 无前缀 -> HuggingFace（可选 token；`Authorization: Bearer <token>` 或 `Authorization: Bearer hf:<token>`）
 
 ## 安全性
 
-### API Key 存储
-
-你的 Gitee AI API Key 使用 **AES-256-GCM 加密** 安全存储在浏览器中:
-
-- Key 在保存到 localStorage 前会被加密
-- 加密密钥通过 PBKDF2 (100,000 次迭代) 从浏览器指纹派生
-- 即使 localStorage 被访问，没有相同的浏览器环境也无法读取 API Key
-- 更换浏览器或清除浏览器数据需要重新输入 API Key
-
-**实现细节** (`src/lib/crypto.ts`):
-
-- 使用 Web Crypto API (浏览器原生加密)
-- AES-256-GCM 认证加密
-- 每次加密使用随机 IV
-- 浏览器指纹包括: User-Agent、语言、屏幕尺寸
-
-**注意**: 虽然这提供了对普通访问和 XSS 攻击读取原始值的保护，但在共享环境中为了最大安全性，建议:
-
-- 使用隐私/无痕窗口
-- 使用后清除浏览器数据
-- 自托管并使用服务端 API Key 存储
-
-## 环境变量
-
-### 前端 (`apps/web/.env`)
-
-| 变量           | 描述                                      | 默认值 |
-| -------------- | ----------------------------------------- | ------ |
-| `VITE_API_URL` | API 基础 URL。Cloudflare Pages 部署时留空 | ``     |
-
-### API (`apps/api/wrangler.toml`)
-
-| 变量           | 描述             | 默认值                                        |
-| -------------- | ---------------- | --------------------------------------------- |
-| `CORS_ORIGINS` | 逗号分隔的允许源 | `http://localhost:5173,http://localhost:3000` |
-
-## API 参考
-
-### `POST /api/generate`
-
-从文本提示生成图片。
-
-**请求头:**
+### API Key 如何被保护
 
 ```
-Content-Type: application/json
-X-API-Key: your-gitee-ai-api-key
+浏览器 ──HTTPS──→ Cloudflare Workers ──HTTPS──→ AI 服务商 (Gitee/HuggingFace)
+  ↑                      ↑
+AES-256-GCM          代理层
+加密存储            (你的部署实例)
 ```
 
-**请求体:**
+- **本地加密**：API Key 使用 AES-256-GCM 加密后存储在 localStorage
+- **传输安全**：所有通信使用 HTTPS 加密
+- **代理架构**：你的 Key 发送到你自己的 Workers，而非直接发给 AI 服务商
 
-```json
-{
-  "prompt": "美丽的山间日落",
-  "negative_prompt": "低质量, 模糊",
-  "model": "z-image-turbo",
-  "width": 1024,
-  "height": 1024,
-  "num_inference_steps": 9
-}
-```
+### ⚠️ 第三方部署警告
 
-**响应:**
+> **重要提示**：如果你使用他人部署的实例，部署者可能有能力获取你的 API Key。
 
-```json
-{
-  "url": "https://...",
-  "b64_json": "base64-encoded-image-data"
-}
-```
+原因如下：
 
-**参数:**
+1. 部署者可以添加日志代码来捕获请求头中的 Key
+2. 你无法验证实际部署的代码是否与开源代码一致
+3. Cloudflare 提供了 `wrangler tail` 等工具可以实时查看请求
 
-| 字段                  | 类型   | 必填 | 默认值          | 描述                       |
-| --------------------- | ------ | ---- | --------------- | -------------------------- |
-| `prompt`              | string | 是   | -               | 图片描述 (最多 10000 字符) |
-| `negative_prompt`     | string | 否   | `""`            | 图片中要避免的内容         |
-| `model`               | string | 否   | `z-image-turbo` | 模型名称                   |
-| `width`               | number | 否   | `1024`          | 图片宽度 (256-2048)        |
-| `height`              | number | 否   | `1024`          | 图片高度 (256-2048)        |
-| `num_inference_steps` | number | 否   | `9`             | 生成步数 (1-50)            |
+**安全建议**：
 
-## 支持的宽高比
+| 场景 | 风险等级 | 建议 |
+|------|----------|------|
+| 自己部署 | ✅ 安全 | 完全掌控你的 Key |
+| 第三方实例 | ⚠️ 有风险 | 仅使用一次性或低额度的 Key |
+| 来源不明 | ❌ 不安全 | 不要输入有价值的 API Key |
 
-| 比例 | 尺寸                                   |
-| ---- | -------------------------------------- |
-| 1:1  | 256×256, 512×512, 1024×1024, 2048×2048 |
-| 4:3  | 1152×896, 2048×1536                    |
-| 3:4  | 768×1024, 1536×2048                    |
-| 3:2  | 2048×1360                              |
-| 2:3  | 1360×2048                              |
-| 16:9 | 1024×576, 2048×1152                    |
-| 9:16 | 576×1024, 1152×2048                    |
+**为了最大程度保障安全，请始终部署自己的实例。**
 
-## 故障排除
+## 技术栈
 
-### API Key 无法保存
+| 层级 | 技术                                    |
+| ---- | --------------------------------------- |
+| 前端 | React 19, Vite, Tailwind CSS, shadcn/ui |
+| 后端 | Hono (TypeScript)                       |
+| 部署 | Cloudflare Pages + Functions            |
 
-- 确保浏览器允许 localStorage
-- 检查是否在隐私/无痕模式
+## star 历史
 
-### CORS 错误
-
-- Cloudflare Pages: 应该自动工作
-- 分离部署: 更新 `apps/api/wrangler.toml` 中的 `CORS_ORIGINS`
-
-### 构建失败
-
-- 确保安装了 Node.js 18+ 和 pnpm 9+
-- 运行 `pnpm install` 更新依赖
+[![Star History Chart](https://api.star-history.com/svg?repos=WuMingDao/zenith-image-generator&type=date&legend=top-left)](https://www.star-history.com/#WuMingDao/zenith-image-generator&type=date&legend=top-left)
 
 ## 许可证
 
@@ -341,6 +188,6 @@ MIT
 
 ## 致谢
 
-- [Gitee AI](https://ai.gitee.com) 提供 z-image-turbo 模型
-- [shadcn/ui](https://ui.shadcn.com) 提供 UI 组件
-- [Hono](https://hono.dev) 提供轻量级 Web 框架
+- [Gitee AI](https://ai.gitee.com) - z-image-turbo 模型
+- [shadcn/ui](https://ui.shadcn.com) - UI 组件
+- [Hono](https://hono.dev) - Web 框架

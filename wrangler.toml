@@ -1,0 +1,4 @@
+name = "zenith-image-generator"
+pages_build_output_dir = "apps/web/dist"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]

@@ -1,9 +1,36 @@
-name = "zenith-image-generator"
+# Z-Image API - Cloudflare Workers Configuration
+#
+# Deploy with: wrangler deploy
+# Dev with: wrangler dev
+
+name = "z-image-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
 
+# Environment variables (set via wrangler secret or dashboard)
+[vars]
+CORS_ORIGINS = "https://your-frontend-domain.com"
+
+# Production environment
+[env.production]
+name = "z-image-api"
+vars = { CORS_ORIGINS = "https://your-production-domain.com" }
+
+# Staging environment
+[env.staging]
+name = "z-image-api-staging"
+vars = { CORS_ORIGINS = "https://staging.your-domain.com" }
+
+# Development settings
 [dev]
 port = 8787
+local_protocol = "http"
 
-[vars]
-CORS_ORIGINS = "http://localhost:5173,http://localhost:3000,https://your-app.vercel.app,https://your-app.netlify.app"
+# Build configuration
+[build]
+command = ""
+
+# Observability
+[observability]
+enabled = true

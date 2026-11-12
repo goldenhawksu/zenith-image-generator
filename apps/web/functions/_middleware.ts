@@ -1,6 +1,8 @@
+import handler from '../../api/src/index'
+import type { DeploymentEnv } from '../../api/src/deployment'
 import { authenticated, configured, createSession, passwordMatches, COOKIE_NAME, SESSION_SECONDS, privateHeaders, type AuthEnv } from '../../api/src/auth'
 
-type Context = { request: Request; env: AuthEnv; next: () => Promise<Response> }
+type Context = { request: Request; env: DeploymentEnv; next: () => Promise<Response> }
 const headers = { ...privateHeaders, 'X-Content-Type-Options': 'nosniff' }
 const redirect = (location: string, cookie?: string) => new Response(null, { status: 303, headers: { ...headers, Location: location, ...(cookie ? { 'Set-Cookie': cookie } : {}) } })
 const cookie = (value: string, maxAge: number) => `${COOKIE_NAME}=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`
@@ -25,7 +27,7 @@ export async function onRequest({ request, env, next }: Context): Promise<Respon
     if (!await passwordMatches(password, env.ACCESS_PASSWORD!)) return loginPage('Invalid password', 401)
     return redirect('/', cookie(await createSession(env), SESSION_SECONDS))
   }
-  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/') || url.pathname === '/v1' || url.pathname.startsWith('/v1/')) {
     // Also protect unknown routes; the standalone Hono app independently verifies sessions.
     if (!await authenticated(request, env)) return new Response(JSON.stringify({ error: 'Authentication required' }), { status: 401, headers: { ...headers, 'Content-Type': 'application/json' } })
   } else if (!await authenticated(request, env)) {
@@ -35,6 +37,11 @@ export async function onRequest({ request, env, next }: Context): Promise<Respon
       if (!response.headers.get('Content-Type')?.includes('text/html')) return response
     }
     return redirect('/auth/login')
+  }
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/') || url.pathname === '/v1' || url.pathname.startsWith('/v1/')) {
+    const apiUrl = new URL(request.url)
+    apiUrl.pathname = apiUrl.pathname.replace(/^\/api(?=\/|$)/, '') || '/'
+    return handler.fetch(new Request(apiUrl, request), env, { waitUntil() {}, passThroughOnException() {} } as ExecutionContext)
   }
   const downstream = await next()
   const response = new Response(downstream.body, downstream)

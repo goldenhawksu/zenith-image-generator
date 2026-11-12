@@ -38,4 +38,12 @@ coverage
 # Cache
 .cache
 
-docs
+des
+
+
+.local-bin/
+*-tests.log
+red-*.log
+.pages-build/
+
+*.log
