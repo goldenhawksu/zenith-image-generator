@@ -8,7 +8,7 @@
 import {
   type AspectRatioConfig,
   DEFAULT_OPTIMIZE_SYSTEM_PROMPT,
-  getModelsByProvider,
+  getModelsByProvider as getSharedModelsByProvider,
   LLM_PROVIDER_CONFIGS,
   type LLMProviderType,
   MODEL_CONFIGS,
@@ -20,7 +20,11 @@ import { RectangleHorizontal, RectangleVertical, Square } from 'lucide-react'
 
 // Re-export shared types
 export type { ProviderType, AspectRatioConfig, LLMProviderType }
-export { PROVIDER_CONFIGS, MODEL_CONFIGS, getModelsByProvider, LLM_PROVIDER_CONFIGS }
+export { PROVIDER_CONFIGS, MODEL_CONFIGS, LLM_PROVIDER_CONFIGS }
+
+export function getModelsByProvider(provider: ProviderType) {
+  return getSharedModelsByProvider(provider).filter(model => provider !== 'gitee' || model.id === 'z-image-turbo')
+}
 export { DEFAULT_OPTIMIZE_SYSTEM_PROMPT }
 
 // Environment defaults (with fallbacks to prevent undefined)
@@ -71,7 +75,7 @@ export const PROVIDER_OPTIONS: { value: ProviderType; label: string; requiresAut
   { value: 'sub2api', label: 'Sub2API (server)', requiresAuth: false },
   { value: 'huggingface', label: 'HuggingFace', requiresAuth: false },
   { value: 'a4f', label: 'A4F', requiresAuth: true },
-  { value: 'gitee', label: 'Gitee AI', requiresAuth: true },
+  { value: 'gitee', label: 'Gitee AI (server: Z-Image Turbo only)', requiresAuth: false },
   { value: 'modelscope', label: 'ModelScope', requiresAuth: true },
 ]
 

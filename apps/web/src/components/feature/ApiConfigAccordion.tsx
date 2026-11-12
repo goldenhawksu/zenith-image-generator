@@ -104,7 +104,7 @@ export function ApiConfigAccordion({
             </div>
 
             {/* Token Input */}
-            {provider !== 'sub2api' && (<div>
+            {provider !== 'sub2api' && provider !== 'gitee' && (<div>
               <Label className="text-zinc-400 text-xs">
                 {t('apiConfig.token', { provider: providerConfig.name })}
                 {!providerConfig.requiresAuth && ` ${t('apiConfig.optional')}`}

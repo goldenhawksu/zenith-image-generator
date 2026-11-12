@@ -80,6 +80,8 @@ export const giteeImage: ImageCapability = {
 
     const response = await fetch('https://ai.gitee.com/v1/images/generations', {
       method: 'POST',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(180000),
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token.trim()}`,

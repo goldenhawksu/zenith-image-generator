@@ -34,6 +34,7 @@ function listModels(): OpenAIModelsListResponse {
   return {
     object: 'list',
     data: [
+      ...['gpt-image-2.5-sunburst', 'gpt-image-2.6-sunburst'].map(id => ({ id, object: 'model' as const, created, owned_by: 'sub2api' })),
       ...['z-image-turbo', 'qwen-image-fast', 'ovis-image', 'flux-1-schnell'].map((id) => ({
         id,
         object: 'model' as const,

@@ -7,6 +7,7 @@ import type { ModelConfig, ProviderType } from '../types/provider'
 /** All model configurations */
 export const MODEL_CONFIGS: ModelConfig[] = [
   { id: 'gpt-image-2.6-sunburst', name: 'GPT Image 2.6 Sunburst', provider: 'sub2api', features: { negativePrompt: false, steps: { min: 1, max: 1, default: 1 }, seed: false } },
+  { id: 'gpt-image-2.5-sunburst', name: 'GPT Image 2.5 Sunburst', provider: 'sub2api', features: { negativePrompt: false, steps: { min: 1, max: 1, default: 1 }, seed: false } },
   // A4F models (OpenAI-compatible)
   {
     id: 'provider-4/imagen-3.5',

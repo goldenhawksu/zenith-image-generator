@@ -129,10 +129,10 @@ describe('PROVIDER_OPTIONS', () => {
     expect(hf!.requiresAuth).toBe(false)
   })
 
-  it('should have gitee as a provider with auth required', () => {
+  it('should have gitee as a server provider without browser auth required', () => {
     const gitee = PROVIDER_OPTIONS.find((p) => p.value === 'gitee')
     expect(gitee).toBeDefined()
-    expect(gitee!.requiresAuth).toBe(true)
+    expect(gitee!.requiresAuth).toBe(false)
   })
 
   it('should have modelscope as a provider with auth required', () => {

@@ -27,8 +27,8 @@ it('every flow generation path defaults to server provider and never hardcodes G
  for(const file of ['apps/web/src/hooks/useImageGenerator.ts','apps/web/src/pages/FlowPageV2.tsx']) expect(readFileSync(file,'utf8')).not.toContain("?? 'huggingface'")
 })
 
-it('hides token entry for server provider in both settings components',()=>{
- for(const name of ['SettingsModal','ApiConfigAccordion']) expect(readFileSync(`apps/web/src/components/feature/${name}.tsx`,'utf8')).toContain("{provider !== 'sub2api' && (")
+it('hides token entry for both server providers in both settings components',()=>{
+ for(const name of ['SettingsModal','ApiConfigAccordion']) expect(readFileSync(`apps/web/src/components/feature/${name}.tsx`,'utf8')).toContain("{provider !== 'sub2api' && provider !== 'gitee' && (")
 })
 it('preserves explicit alternative provider choices after migration',()=>{
  localStorage.setItem('zenith-settings',JSON.stringify({provider:'gitee',model:'z-image-turbo',serverProviderVersion:1}))

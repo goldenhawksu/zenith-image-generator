@@ -1,6 +1,10 @@
 import { authenticated, privateHeaders, type AuthEnv } from './auth'
+import { giteeImage } from './channels/gitee/image'
+import { convertRequest, convertResponse } from './openai/adapter'
+import type { OpenAIImageRequest } from './openai/types'
 
 export interface DeploymentEnv extends AuthEnv {
+  GITEE_API_KEY?: string
   IMAGE_API_KEY?: string
   IMAGE_API_BASE_URL?: string
   IMAGE_MODEL?: string
@@ -24,7 +28,21 @@ export async function deploymentResponse(request: Request, env: DeploymentEnv): 
   } catch { return json({ error: { message: 'Invalid JSON' } }, 400) }
   // Explicit alternative providers continue through upstream's channel machinery.
   const model = typeof body.model === 'string' ? body.model : ''
-  if (/^(gitee|ms|hf|a4f|custom)\//.test(model) || ['z-image-turbo','qwen-image-fast','ovis-image','flux-1-schnell'].includes(model)) return null
+  if (model.startsWith('gitee/')) {
+    if (model !== 'gitee/z-image-turbo') return json({ error: { message: 'Only z-image-turbo is available with the server Gitee key' } }, 400)
+    if (!env.GITEE_API_KEY?.trim()) return json({ error: { message: 'Gitee provider is not configured' } }, 503)
+    if (body.n !== undefined && body.n !== 1) return json({ error: { message: 'Invalid image count' } }, 400)
+    let imageRequest
+    try { imageRequest = convertRequest(body as unknown as OpenAIImageRequest) }
+    catch { return json({ error: { message: 'Invalid image request' } }, 400) }
+    try {
+      // Only this authenticated image branch receives the server credential.
+      const result = await giteeImage.generate({ ...imageRequest, model: model.slice('gitee/'.length) }, env.GITEE_API_KEY)
+      if (result.url.includes(env.GITEE_API_KEY.trim())) throw new Error()
+      return json(convertResponse(result))
+    } catch { return json({ error: { message: 'Image provider request failed' } }, 502) }
+  }
+  if (/^(ms|hf|a4f|custom)\//.test(model) || ['z-image-turbo','qwen-image-fast','ovis-image','flux-1-schnell'].includes(model)) return null
   if (!env.IMAGE_API_KEY || !env.IMAGE_API_BASE_URL) return json({ error: { message: 'Image provider is not configured' } }, 503)
   if (typeof body.prompt !== 'string' || !body.prompt.trim() || body.prompt.length > 32000 || (body.n !== undefined && body.n !== 1)) return json({ error: { message: 'Invalid prompt or image count' } }, 400)
   const match = typeof body.size === 'string' ? /^(\d+)x(\d+)$/.exec(body.size) : null
@@ -38,9 +56,9 @@ export async function deploymentResponse(request: Request, env: DeploymentEnv): 
     let url = base.href.replace(/\/$/, '')
     if (!url.endsWith('/v1')) url += '/v1'
     const upstream = await fetch(`${url}/images/generations`, {
-      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(180000),
+      method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(180000),
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.IMAGE_API_KEY}` },
-      body: JSON.stringify({ model: env.IMAGE_MODEL || 'gpt-image-2.6-sunburst', prompt: body.prompt, size, n: 1, response_format: 'b64_json' }),
+      body: JSON.stringify({ model: ['gpt-image-2.5-sunburst', 'gpt-image-2.6-sunburst'].includes(model) ? model : env.IMAGE_MODEL || 'gpt-image-2.6-sunburst', prompt: body.prompt, size, n: 1, response_format: 'b64_json' }),
     })
     if (!upstream.ok) return json({ error: { message: 'Image provider request failed' } }, 502)
     const result = await upstream.json() as { data?: Array<{ url?: string; b64_json?: string }> }

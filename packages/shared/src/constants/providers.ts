@@ -26,8 +26,8 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   },
   gitee: {
     id: 'gitee',
-    name: 'Gitee AI',
-    requiresAuth: true,
+    name: 'Gitee AI (server: Z-Image Turbo only)',
+    requiresAuth: false,
     authHeader: 'X-API-Key',
     baseUrl: 'https://ai.gitee.com/v1',
   },
