@@ -7,7 +7,6 @@ import { StatusCard } from "@/components/feature/StatusCard";
 
 export default function ImageGenerator() {
   const {
-    apiKey,
     hfToken,
     apiProvider,
     prompt,
@@ -25,7 +24,6 @@ export default function ImageGenerator() {
     isBlurred,
     isUpscaled,
     isUpscaling,
-    setApiKey,
     setHfToken,
     setApiProvider,
     setPrompt,
@@ -35,7 +33,6 @@ export default function ImageGenerator() {
     setSteps,
     setShowInfo,
     setIsBlurred,
-    saveApiKey,
     saveHfToken,
     handleRatioSelect,
     handleUhdToggle,
@@ -55,13 +52,10 @@ export default function ImageGenerator() {
             {/* Left Panel - Controls */}
             <div className="lg:col-span-3 space-y-4">
               <ApiConfigAccordion
-                apiKey={apiKey}
                 hfToken={hfToken}
                 apiProvider={apiProvider}
-                setApiKey={setApiKey}
                 setHfToken={setHfToken}
                 setApiProvider={setApiProvider}
-                saveApiKey={saveApiKey}
                 saveHfToken={saveHfToken}
               />
 

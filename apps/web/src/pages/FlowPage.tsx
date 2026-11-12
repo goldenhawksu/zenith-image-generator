@@ -16,7 +16,6 @@ import {
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Settings, X, Plus, Trash2, MessageSquare, Download } from "lucide-react";
 import { Link } from "react-router-dom";
-import { encryptAndStore, decryptFromStore } from "@/lib/crypto";
 import {
   loadFlowSessions,
   saveFlowSessions,
@@ -38,7 +37,6 @@ const nodeTypes = {
 function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [apiKey, setApiKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [sessions, setSessions] = useState<FlowSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -51,15 +49,6 @@ function FlowCanvas() {
     const loaded = loadFlowSessions();
     setSessions(loaded);
   }, []);
-
-  useEffect(() => {
-    decryptFromStore().then((key) => setApiKey(key || ""));
-  }, []);
-
-  const saveApiKey = async (key: string) => {
-    await encryptAndStore(key);
-    setApiKey(key);
-  };
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -141,7 +130,7 @@ function FlowCanvas() {
             width: config.width,
             height: config.height,
             aspectRatio,
-            model: "Gitee AI",
+            model: "gpt-image-2.6-sunburst",
             seed: config.seed + i,
             onImageGenerated: handleImageGenerated,
           } as AIResultNodeData,
@@ -297,8 +286,7 @@ function FlowCanvas() {
               className="flex items-center gap-2 px-3 py-1.5 border border-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
             >
               <Settings className="w-4 h-4" />
-              <span className="text-sm">API Key</span>
-              {apiKey && <span className="w-2 h-2 bg-green-500 rounded-full" />}
+              <span className="text-sm">Model</span>
             </button>
           </div>
         </div>
@@ -312,16 +300,8 @@ function FlowCanvas() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <label className="block text-zinc-400 text-sm mb-2">Gitee AI API Key</label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                onBlur={(e) => saveApiKey(e.target.value)}
-                placeholder="Enter your Gitee AI API Key..."
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700"
-              />
-              <p className="text-zinc-500 text-xs mt-2">Key is encrypted and stored locally (shared with home page).</p>
+              <p className="text-zinc-300 text-sm">gpt-image-2.6-sunburst</p>
+              <p className="text-zinc-500 text-xs mt-2">Server configured · No API key required</p>
             </div>
           </div>
         )}

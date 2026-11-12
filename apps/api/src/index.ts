@@ -1,9 +1,13 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import OpenAI from 'openai'
+import { authenticated, privateHeaders, type AuthEnv } from './auth'
 
-type Bindings = {
+type Bindings = AuthEnv & {
   CORS_ORIGINS?: string
+  IMAGE_API_BASE_URL?: string
+  IMAGE_API_KEY?: string
+  IMAGE_MODEL?: string
 }
 
 const HF_SPACES = {
@@ -73,6 +77,16 @@ async function callGradioApi(baseUrl: string, endpoint: string, data: unknown[],
 const app = new Hono<{ Bindings: Bindings }>().basePath('/api')
 
 app.use('/*', async (c, next) => {
+  for (const [key, value] of Object.entries(privateHeaders)) c.header(key, value)
+  if (!await authenticated(c.req.raw, c.env)) return c.json({ error: 'Authentication required' }, 401)
+  const origin = c.req.header('Origin')
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method) && origin && origin !== new URL(c.req.url).origin) {
+    return c.json({ error: 'Invalid origin' }, 403)
+  }
+  await next()
+})
+
+app.use('/*', async (c, next) => {
   const origins = c.env?.CORS_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000']
   return cors({
     origin: origins,
@@ -86,9 +100,8 @@ app.get('/', (c) => {
 })
 
 app.post('/generate', async (c) => {
-  const apiKey = c.req.header('X-API-Key')
-  if (!apiKey) {
-    return c.json({ error: 'API Key is required' }, 401)
+  if (!c.env.IMAGE_API_BASE_URL || !c.env.IMAGE_API_KEY) {
+    return c.json({ error: 'Image provider is not configured' }, 503)
   }
 
   let body: {
@@ -126,20 +139,16 @@ app.post('/generate', async (c) => {
   }
 
   const client = new OpenAI({
-    baseURL: 'https://ai.gitee.com/v1',
-    apiKey: apiKey.trim(),
+    baseURL: c.env.IMAGE_API_BASE_URL,
+    apiKey: c.env.IMAGE_API_KEY,
+    fetch: globalThis.fetch,
   })
 
   try {
     const response = await client.images.generate({
       prompt: body.prompt,
-      model: body.model || 'z-image-turbo',
+      model: c.env.IMAGE_MODEL || 'gpt-image-2.6-sunburst',
       size: `${width}x${height}` as '1024x1024',
-      // @ts-expect-error extra_body is supported by OpenAI SDK
-      extra_body: {
-        negative_prompt: body.negative_prompt || '',
-        num_inference_steps: steps,
-      },
     })
 
     const imageData = response.data?.[0]
@@ -151,9 +160,8 @@ app.post('/generate', async (c) => {
       url: imageData.url,
       b64_json: imageData.b64_json,
     })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Image generation failed'
-    return c.json({ error: message }, 500)
+  } catch {
+    return c.json({ error: 'Image generation failed' }, 500)
   }
 })
 

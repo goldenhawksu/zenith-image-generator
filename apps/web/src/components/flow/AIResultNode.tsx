@@ -1,7 +1,7 @@
 import { memo, useEffect, useState, useRef } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Sparkles, Download, Trash2, Eye, EyeOff } from "lucide-react";
-import { decryptFromStore } from "@/lib/crypto";
+import { generateImage } from "@/lib/generate-image";
 
 import type { GeneratedImage } from "@/lib/flow-storage";
 
@@ -16,44 +16,6 @@ export type AIResultNodeData = {
   onDelete?: (id: string) => void;
 };
 
-async function generateImage(
-  prompt: string,
-  apiKey: string,
-  width: number,
-  height: number
-): Promise<string> {
-  const res = await fetch(
-    `${import.meta.env.VITE_API_URL || ""}/api/generate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-      body: JSON.stringify({
-        prompt,
-        negative_prompt: "",
-        model: "z-image-turbo",
-        width,
-        height,
-        num_inference_steps: 9,
-      }),
-    }
-  );
-
-  const text = await res.text();
-  if (!text) throw new Error("Empty response from server");
-
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(`Invalid response: ${text.slice(0, 100)}`);
-  }
-
-  if (!res.ok) throw new Error(data.error || "Failed to generate");
-  return data.url || `data:image/png;base64,${data.b64_json}`;
-}
 
 function AIResultNode({ id, data }: NodeProps) {
   const { prompt, width, height, aspectRatio, model, seed, onImageGenerated, onDelete } = data as AIResultNodeData;
@@ -79,13 +41,7 @@ function AIResultNode({ id, data }: NodeProps) {
     if (generatingRef.current) return;
     generatingRef.current = true;
 
-    decryptFromStore().then((apiKey) => {
-      if (!apiKey) {
-        setError("No API Key");
-        setLoading(false);
-        return;
-      }
-      generateImage(prompt, apiKey, width, height)
+      generateImage(prompt, width, height)
         .then((url) => {
           setImageUrl(url);
           setLoading(false);
@@ -107,7 +63,6 @@ function AIResultNode({ id, data }: NodeProps) {
           setError(err.message);
           setLoading(false);
         });
-    });
   }, [prompt, width, height, aspectRatio, model, seed, id, onImageGenerated]);
 
   const handleDownload = () => {

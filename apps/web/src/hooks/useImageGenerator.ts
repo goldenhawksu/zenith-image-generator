@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { encryptAndStore, decryptFromStore } from "@/lib/crypto";
 import { toast } from "sonner";
 import {
   type ApiProvider,
@@ -11,7 +10,6 @@ import {
 } from "@/lib/constants";
 
 export function useImageGenerator() {
-  const [apiKey, setApiKey] = useState("");
   const [hfToken, setHfToken] = useState("");
   const [apiProvider, setApiProvider] = useState<ApiProvider>(
     () => loadSettings().apiProvider ?? "gitee"
@@ -22,7 +20,6 @@ export function useImageGenerator() {
   const [negativePrompt, setNegativePrompt] = useState(
     () => loadSettings().negativePrompt ?? DEFAULT_NEGATIVE_PROMPT
   );
-  const [model] = useState("z-image-turbo");
   const [width, setWidth] = useState(() => loadSettings().width ?? 1024);
   const [height, setHeight] = useState(() => loadSettings().height ?? 1024);
   const [steps, setSteps] = useState(() => loadSettings().steps ?? 9);
@@ -48,7 +45,6 @@ export function useImageGenerator() {
   useEffect(() => {
     if (!initialized.current) {
       initialized.current = true;
-      decryptFromStore().then(setApiKey);
       const stored = localStorage.getItem("hfToken");
       if (stored) {
         try {
@@ -128,12 +124,6 @@ export function useImageGenerator() {
     return () => clearInterval(timer);
   }, [loading]);
 
-  const saveApiKey = (key: string) => {
-    setApiKey(key);
-    encryptAndStore(key);
-    if (key) toast.success("API Key saved");
-  };
-
   const saveHfToken = async (token: string) => {
     setHfToken(token);
     if (token) {
@@ -210,7 +200,7 @@ export function useImageGenerator() {
     addStatus("Upscaling to 4x...");
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/api/upscale`,
+        `/api/upscale`,
         {
           method: "POST",
           headers: {
@@ -249,11 +239,6 @@ export function useImageGenerator() {
   };
 
   const handleGenerate = async () => {
-    if (apiProvider === "gitee" && !apiKey) {
-      toast.error("Please configure your API Key first");
-      return;
-    }
-
     setLoading(true);
     setImageUrl(null);
     setIsUpscaled(false);
@@ -265,19 +250,17 @@ export function useImageGenerator() {
       let generatedUrl: string | undefined;
 
       if (apiProvider === "gitee") {
-        addStatus("Sending request to Gitee AI...");
+        addStatus("Sending request to gpt-image-2.6-sunburst...");
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL || ""}/api/generate`,
+          `/api/generate`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-API-Key": apiKey,
             },
             body: JSON.stringify({
               prompt,
               negative_prompt: negativePrompt,
-              model,
               width,
               height,
               num_inference_steps: steps,
@@ -296,7 +279,7 @@ export function useImageGenerator() {
       } else {
         addStatus(`Sending request to HF Spaces (${apiProvider})...`);
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL || ""}/api/generate-hf`,
+          `/api/generate-hf`,
           {
             method: "POST",
             headers: {
@@ -324,7 +307,7 @@ export function useImageGenerator() {
         addStatus("Upscaling to 8K...");
         try {
           const upRes = await fetch(
-            `${import.meta.env.VITE_API_URL || ""}/api/upscale`,
+            `/api/upscale`,
             {
               method: "POST",
               headers: {
@@ -364,7 +347,6 @@ export function useImageGenerator() {
 
   return {
     // State
-    apiKey,
     hfToken,
     apiProvider,
     prompt,
@@ -383,7 +365,6 @@ export function useImageGenerator() {
     isUpscaled,
     isUpscaling,
     // Setters
-    setApiKey,
     setHfToken,
     setApiProvider,
     setPrompt,
@@ -394,7 +375,6 @@ export function useImageGenerator() {
     setShowInfo,
     setIsBlurred,
     // Handlers
-    saveApiKey,
     saveHfToken,
     handleRatioSelect,
     handleUhdToggle,

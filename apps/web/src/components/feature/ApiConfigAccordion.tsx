@@ -17,24 +17,18 @@ import {
 import type { ApiProvider } from "@/lib/constants";
 
 interface ApiConfigAccordionProps {
-  apiKey: string;
   hfToken: string;
   apiProvider: ApiProvider;
-  setApiKey: (key: string) => void;
   setHfToken: (token: string) => void;
   setApiProvider: (provider: ApiProvider) => void;
-  saveApiKey: (key: string) => void;
   saveHfToken: (token: string) => void;
 }
 
 export function ApiConfigAccordion({
-  apiKey,
   hfToken,
   apiProvider,
-  setApiKey,
   setHfToken,
   setApiProvider,
-  saveApiKey,
   saveHfToken,
 }: ApiConfigAccordionProps) {
   return (
@@ -48,9 +42,6 @@ export function ApiConfigAccordion({
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             <span>API Configuration</span>
-            {apiKey && (
-              <span className="text-xs text-green-500">● Configured</span>
-            )}
           </div>
         </AccordionTrigger>
         <AccordionContent>
@@ -65,24 +56,14 @@ export function ApiConfigAccordion({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900/70 backdrop-blur-md border-zinc-700 text-white">
-                  <SelectItem value="gitee">Gitee AI</SelectItem>
+                  <SelectItem value="gitee">gpt-image-2.6-sunburst</SelectItem>
                   <SelectItem value="hf-zimage">HF Z-Image Turbo</SelectItem>
                   <SelectItem value="hf-qwen">HF Qwen Image</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {apiProvider === "gitee" ? (
-              <div>
-                <Label className="text-zinc-400 text-xs">Gitee API Key</Label>
-                <Input
-                  type="password"
-                  placeholder="Enter your Gitee AI API Key..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  onBlur={(e) => saveApiKey(e.target.value)}
-                  className="mt-1 bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-600"
-                />
-              </div>
+              <p className="text-zinc-400 text-xs">Server configured · No API key required</p>
             ) : (
               <div>
                 <Label className="text-zinc-400 text-xs">

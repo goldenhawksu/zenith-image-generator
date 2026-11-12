@@ -138,7 +138,7 @@ export default function FloatingInput({ onSubmit }: FloatingInputProps) {
               <span className="text-zinc-500 font-medium">图片生成模式</span>
               <span className="h-3 w-px bg-zinc-700 mx-1"></span>
               <Sparkles size={14} className="text-yellow-500" />
-              <span>Gitee AI</span>
+              <span>gpt-image-2.6-sunburst</span>
             </div>
           </div>
 
