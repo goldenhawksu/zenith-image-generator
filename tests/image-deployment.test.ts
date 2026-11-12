@@ -17,6 +17,7 @@ describe('deployment adapter',()=>{
   const [url,init]=upstream.mock.calls[0] as unknown as [string,RequestInit]
   expect(url).toBe('https://upstream.test/v1/images/generations')
   expect(new Headers(init.headers).get('Authorization')).toBe('Bearer server-only-test-key')
+  expect(new Headers(init.headers).get('User-Agent')).toBe('Mozilla/5.0 (compatible; ZenithImageProxy/1.0)')
   expect(JSON.parse(init.body as string)).toEqual({model:env.IMAGE_MODEL,prompt:'cat',size:'1024x1536',n:1,response_format:'b64_json'})
   const text=await response.text();expect(text).toContain('data:image/png;base64,aGVsbG8=');expect(text).not.toContain(env.IMAGE_API_KEY)
  })

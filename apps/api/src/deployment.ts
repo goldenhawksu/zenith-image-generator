@@ -57,7 +57,7 @@ export async function deploymentResponse(request: Request, env: DeploymentEnv): 
     if (!url.endsWith('/v1')) url += '/v1'
     const upstream = await fetch(`${url}/images/generations`, {
       method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(180000),
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.IMAGE_API_KEY}` },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ZenithImageProxy/1.0)', 'Content-Type': 'application/json', Authorization: `Bearer ${env.IMAGE_API_KEY}` },
       body: JSON.stringify({ model: ['gpt-image-2.5-sunburst', 'gpt-image-2.6-sunburst'].includes(model) ? model : env.IMAGE_MODEL || 'gpt-image-2.6-sunburst', prompt: body.prompt, size, n: 1, response_format: 'b64_json' }),
     })
     if (!upstream.ok) return json({ error: { message: 'Image provider request failed' } }, 502)
